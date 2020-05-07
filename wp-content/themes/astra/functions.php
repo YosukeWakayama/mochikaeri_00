@@ -165,6 +165,18 @@ require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-functions.php';
 
 
 
+// [sc_form_post]を作成
+function form_post()
+{
+	if (isset($_POST)) {
+		$form_post = $_POST;
+		print_r($form_post);
+	}
+}
+add_shortcode('sc_form_post', 'form_post');
+
+
+
 //フォーム送信時にチケット作成をおこなう
 function wpcf7_insert_post()
 {
@@ -180,14 +192,7 @@ function wpcf7_insert_post()
 			'post_type' => 'post',
 			'post_title' => $formdata['post_title'] . 'インドDOMA' . '-' . $timeStamp = date('Y-m-d_g:i', $timeStamp),
 			'post_status' => 'publish', //下書きは、draft
-			'post_content' =>
-			'[xyz-ips snippet="phpTEST"]' .
-				'<form action="functions.php" method="post">
-    <button type="submit" name="add">登録</button>
-    <button type="submit" name="update">更新</button>
-    <button type="submit" name="remove">削除</button>
-</form>' .
-				'[xyz-ips snippet="PostStatus"]' .
+			'post_content' =>	'[xyz-ips snippet="PostStatus"]' .
 				'<h5>ご注文者さま登録ネーム</h5>' .
 				$formdata['your-name'] .
 
@@ -201,10 +206,44 @@ function wpcf7_insert_post()
 				date_default_timezone_set('Asia/Tokyo') .
 				date("Y/m/d H:i:s") .
 
-				'[contact-form-7 id="184" title="受け取り確認"]' .
+				'[contact-form-7 id="184" title="受け取り確認"]'
+			// the_title(1) .
+			// '<button onclick="location.href=`danmitsu.html`; return false;">おまえにちぇっくい～～ん2</button>' .
 
-				'<button class="push">押して</button>' .
-				'[xyz-ips snippet="vardumpPOST"]',
+			// 			'<form method="post" action="./hoge/fuga.php">
+			//   <p>
+			//     <label for="item1">名前</label>
+			//     <input name="name" id="item1">
+			//   </p>
+			//   <p>
+			//     <label for="item2">年齢</label>
+			//     <input name="old" id="item2">
+			//   </p>
+			//   <p>
+			//     <label for="item3">住所</label>
+			//     <input name="address" id="item3">
+			//   </p>
+			//   <p>
+			//     <input type="submit" value=" 送　信 ">
+			//     <input type="reset" value="リセット">
+			//   </p>
+			// </form>' .
+			// 			'<form method="post" action="/page-b">' . '
+			// 名前：' . '<input type="text" name="name">' . '
+			// アドレス：' . '<input type="email" name="email">' . '
+			// <input type="submit" value="送信">' . '
+			// </form>' .
+			// '[sc_form_post]' .
+			// 				'[xyz-ips snippet="phpTEST"]' .
+			// 				'<form action="functions.php" method="post">
+			//     <button type="submit" name="add">登録</button>
+			//     <button type="submit" name="update">更新</button>
+			//     <button type="submit" name="remove">削除</button>
+			// </form>' .
+
+
+			// '<button class="push">押して</button>' .
+			// '[xyz-ips snippet="vardumpPOST"]',
 			// 'post_content' => '[xyz-ips snippet="PostStatus"]' . '<h5>ご注文者さま登録ネーム</h5>' . $formdata['your-name'] . '<br>' . '<h5>もちかえる時間</h5>' . $formdata['your_time'] . '<br>' . '<h5>もちかえる個数</h5>' . $formdata['your_count']  . '<h5>チケット発行日時</h5>	' . date_default_timezone_set('Asia/Tokyo') . date("Y/m/d H:i:s") . '<br>' . '[contact-form-7 id="184" title="受け取り確認"]',
 		);
 		//チケット作成
@@ -220,58 +259,40 @@ function wpcf7_insert_post()
 add_action('wpcf7_mail_sent', 'wpcf7_insert_post', 10, 1);
 
 
-
-// 投稿したチケットのタイトルを取得
-// function wpcf7_get_post_data($tag)
-// {
-// 	if (!is_array($tag)) return $tag;
-// 	$post_id = (isset($_GET['post_id']) && $_GET['post_id']) ? $_GET['post_id'] : false;
-// 	if ($post_id) {
-// 		if ($tag['name'] == 'post-title') {
-// 			$title = get_the_title($post_id);
-// 			$tag['values'] = array($title);
-// 		}
-// 	}
-// 	return $tag;
-// }
-// add_filter('wpcf7_form_tag', 'wpcf7_get_post_data', 11);
+// add_action( 'template_redirect', 'my_post_format_redirect', 1);
+// function my_post_format_redirect() {
+//     if ( is_archive() ) {
+//         if ( strpos( get_query_var( 'post_type' ), 'post_format' ) !== false ) {
+//             wp_safe_redirect( home_url(/domadoma/) );
+//             exit;
+//         }
+//     }
+// });
 
 
 
-// チケットに有効期限を設定
-// function post_expire_schedule($id)
-// {
-// 	// 投稿が見つからない場合は処理を終了します。
-// 	$post = get_post($id);
-// 	if (!$post) return;
-// 	// 投稿が固定ページなど投稿以外の場合は処理を終了します。
-// 	if ('post' != $post->post_name) return;
 
-// 	// すでに予定の設定があれば除去します。
-// 	$timestamp = wp_next_scheduled('post_expire', array($id));
-// 	if (false !== $timestamp) {
-// 		wp_clear_scheduled_hook('post_expire', array($id));
-// 	}
 
-// 	// 公開状態でない場合(すでに非公開など)は処理を終了します。
-// 	if ('publish' != $post->post_status) return;
+function my_expire_event($post_id)
+{
+	if (
+		get_post_meta($post_id, 'close_time', true) != ''
+		&& date_i18n('Y-m-d H:i') < get_post_meta($post_id, 'close_time', true)
+	) {
+		// 設定されていて未来の日付ならスケジュールをセット
+		$time_stamp = strtotime(get_post_meta($post_id, 'close_time', true) . ' JST');
+		wp_schedule_single_event($time_stamp, 'my_new_event', array($post_id));
+	}
+}
 
-// 	// 公開日時の1分後に非公開にします。
-// 	// ※ サンプル用です。実際には+30 days(30日)など長くするか、カスタムフィールドで公開期限欄を設けるなどします。
-// 	// ※ 設定する日時はUTC(世界標準時)です。日本時間(JST)からは-9時間したものをセットしてください。
-// 	$time = get_post_time('U', true, $id);
-// 	$expire = strtotime('+1 minutes', $time);
-// 	wp_schedule_single_event($expire, 'post_expire', array($id));
-// }
-// add_action('save_post', 'post_expire_schedule');
+add_action('save_post', 'my_expire_event');
 
-// //  * 投稿を非公開にします。
-
-// function post_expire($id)
-// {
-// 	// 本文の<iframe>タグなどが除去されてしまう(WP-Cronはユーザーなしで実行される)ため除去されないようにします。
-// 	kses_remove_filters();
-// 	// 非公開に変更
-// 	wp_update_post(array('ID' => $id, 'post_status' => 'private'));
-// }
-// add_action('post_expire', 'post_expire');
+// スケジュールされる動作を記述
+function my_update_post($post_id)
+{
+	wp_update_post(array(
+		'ID' => post_id,
+		'post_category' =>  array('ここに残したいカテゴリのIDを入れる')
+	));
+}
+add_action('my_new_event', 'my_update_post');
